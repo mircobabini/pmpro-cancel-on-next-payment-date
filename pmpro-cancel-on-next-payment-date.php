@@ -32,7 +32,7 @@ function pmproconpd_pmpro_before_change_membership_level( $level_id, $user_id, $
 
 		// Get the last order.
 		$order = new MemberOrder();
-		$order->getLastMemberOrder( $user_id, 'success', $cancel_level );
+		$order->getLastMemberOrder( $user_id, [ 'review', 'success' ], $cancel_level );
 
 		// Get level to check, if it already has an end date.
 		if ( ! empty( $order ) && ! empty ( $order->membership_id ) ) {
@@ -44,7 +44,7 @@ function pmproconpd_pmpro_before_change_membership_level( $level_id, $user_id, $
 			// Level already has an end date. Set to false so we really cancel.
 			$pmpro_next_payment_timestamp = false;
 		} elseif ( ! empty( $order ) && $order->gateway == 'stripe' ) {
-			$pmpro_next_payment_timestamp = PMProGateway_stripe::pmpro_next_payment( '', $user_id, 'success' );
+			$pmpro_next_payment_timestamp = PMProGateway_stripe::pmpro_next_payment( '', $user_id, $order->status );
 		} elseif ( ! empty( $order ) && $order->gateway == 'paypalexpress' ) {
 			// Check the transaction type.
             if ( ! empty( $_POST['txn_type'] ) && $_POST['txn_type'] == 'recurring_payment_failed' ) {
@@ -57,15 +57,15 @@ function pmproconpd_pmpro_before_change_membership_level( $level_id, $user_id, $
     				$pmpro_next_payment_timestamp = strtotime( $_POST['next_payment_date'], current_time('timestamp' ) );
     			} elseif ( ! empty( $_POST['next_payment_date'] ) && $_POST['next_payment_date'] == 'N/A' ) {
     				// Use the built in PMPro function to guess next payment date.
-    				$pmpro_next_payment_timestamp = pmpro_next_payment( $user_id );
+    				$pmpro_next_payment_timestamp = pmpro_next_payment( $user_id, $order->status );
     			} else {
     				// Cancel is being initiated from PMPro.
-    				$pmpro_next_payment_timestamp = PMProGateway_paypalexpress::pmpro_next_payment( '', $user_id, 'success' );
+    				$pmpro_next_payment_timestamp = PMProGateway_paypalexpress::pmpro_next_payment( '', $user_id, $order->status );
     			}
             }
 		} else {
 			// Use the built in PMPro function to guess next payment date.
-			$pmpro_next_payment_timestamp = pmpro_next_payment( $user_id );
+			$pmpro_next_payment_timestamp = pmpro_next_payment( $user_id, $order->status );
 		}
 	}
 }
